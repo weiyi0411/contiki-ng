@@ -123,10 +123,16 @@ PROCESS_THREAD(sender_node_process, ev, data)
       static unsigned int message_number;
       char buf[20];
 
-      printf("Sending unicast to ");
-      uip_debug_ipaddr_print(&addr);
-      printf("\n");
+      // printf("Sending unicast to ");
+      // uip_debug_ipaddr_print(&addr);
+      // printf("\n");
       sprintf(buf, "Message %d", message_number);
+      printf("Sending unicast to ");
+      printf("; ");
+      uip_debug_ipaddr_print(&addr);
+      printf("; ");
+      printf(" %s\n",buf);
+      printf("\n");
       message_number++;
       simple_udp_sendto(&unicast_connection, buf, strlen(buf) + 1, &addr);
     }
