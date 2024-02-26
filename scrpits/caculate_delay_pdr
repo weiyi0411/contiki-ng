@@ -1,19 +1,28 @@
 import pandas as pd
 
 # 读取CSV文件
-sent_df = pd.read_csv('sent.csv')
-received_df = pd.read_csv('received.csv')
+sent_df = pd.read_csv('sending_results.csv')
+received_df = pd.read_csv('received_results.csv')
+received_df.iloc[:,2]
+# sent_df.head()
+# # # 创建唯一标识符
+sent_df['unique_id'] = sent_df.iloc[:,0].astype(str) + '-' + sent_df.iloc[:,2].astype(str)
 
-# 创建唯一标识符
-sent_df['unique_id'] = sent_df['node_id'].astype(str) + '-' + sent_df['message_id'].astype(str)
-received_df['unique_id'] = received_df['node_id'].astype(str) + '-' + received_df['message_id'].astype(str)
+for i in received_df.iloc[:,1]:
+  # print(str(i))
+  if(str(i) =='fd00::202:2:2:2') :received_df['unique_id'] = str(2) + '-' + received_df.iloc[:,2].astype(str)
+  else:received_df['unique_id'] = str(3) + '-' + received_df.iloc[:,2].astype(str)
 
-# 合并DataFrame
+
+
+# sent_df.head()
+
 merged_df = pd.merge(sent_df, received_df, on='unique_id', suffixes=('_sent', '_received'))
 
-# 计算延迟
-merged_df['delay'] = merged_df['time_received'] - merged_df['time_sent']
 
+# # 计算延迟
+merged_df['delay'] = merged_df.iloc[:,3] - merged_df.iloc[:,8]
+merged_df.head(20)
 # 计算PDR
 pdr = len(merged_df) / len(sent_df)
 
