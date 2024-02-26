@@ -63,9 +63,12 @@ receiver(struct simple_udp_connection *c,
          uint16_t datalen)
 {
   printf("Data received from ");
+  printf("; ");
   uip_debug_ipaddr_print(sender_addr);
-  printf(" on port %d from port %d with length %d: '%s'\n",
-         receiver_port, sender_port, datalen, data);
+  // printf(" on port %d from port %d with length %d: '%s'\n",
+  //        receiver_port, sender_port, datalen, data);
+  printf("; ");
+  printf(" %s\n",data);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(unicast_receiver_process, ev, data)
