@@ -31,3 +31,35 @@ while (true) {
         tfreceived.write(id + ", " + message[1] + ", " + message[2] + ", " + time_msg + "\n");
     } 
 }
+
+
+
+----------
+    /* A simple log file generator script */
+load("nashorn:mozilla_compat.js");
+importPackage(java.io);
+TIMEOUT(1740000); /* 3600 seconds or 1 hour */
+
+fs = new File("COOJA.testlog");
+tfsending= new FileWriter(fs);
+
+log.log("Starting COOJA logger\n");
+tfsending.write("Starting COOJA logger\n");
+timeout_function = function () {
+    log.log("Script timed out.\n");
+    tfsending.write("Script timed out.\n");
+    tfsending.write("TEST OK\n");
+    tfsending.write("Test ended at simulation time: 3600000000");
+    tfsending.close();
+    log.testOK();
+}
+
+
+while (true) {
+    if (msg) {
+        log.log(time + " " + id + " " + msg + "\n");
+        tfsending.write(time + " " + id + " " + msg + "\n");
+    }
+
+    YIELD();
+}
