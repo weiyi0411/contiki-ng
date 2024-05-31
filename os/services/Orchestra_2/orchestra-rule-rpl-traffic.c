@@ -122,7 +122,7 @@ add_uc_link(const linkaddr_t *linkaddr)
 
  
     tsch_schedule_add_link(sf_rpl,
-        LINK_OPTION_TX|LINK_OPTION_RX|LINK_OPTION_SHARED ,
+        LINK_OPTION_RX,
         LINK_TYPE_NORMAL, &tsch_broadcast_address,
         timeslot, 2, 0);
   }
@@ -150,12 +150,25 @@ neighbor_updated(const linkaddr_t *linkaddr, uint8_t is_added)
 }
 /*---------------------------------------------------------------------------*/
 static int
+neighbor_has_uc_link(const linkaddr_t *linkaddr)
+{
+  
+
+  if(linkaddr_cmp(&orchestra_parent_linkaddr, linkaddr)) {
+    /* The node is our parent */
+    return orchestra_parent_knows_us ? 1 : 0;
+  }
+
+
+  return 0;
+}
+static int
 select_packet(uint16_t *slotframe, uint16_t *timeslot, uint16_t *channel_offset)
 {
   /* Select data packets we have a unicast link to */
   linkaddr_t *local_addr = &linkaddr_node_addr;
-  // const linkaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
-  if (is_DIO_traffic())
+  const linkaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
+  if (is_DIO_traffic()&& !neighbor_has_uc_link(local_addr))
   {
     if (slotframe != NULL)
     {
@@ -172,7 +185,7 @@ select_packet(uint16_t *slotframe, uint16_t *timeslot, uint16_t *channel_offset)
     printf("RPL RULE 2 SELECT PACKET\n");
     return 1;
   }
-  if (is_DAO_traffic())
+  if (is_DAO_traffic()&&neighbor_has_uc_link(dest))
   {
     if (slotframe != NULL)
     {
@@ -186,7 +199,7 @@ select_packet(uint16_t *slotframe, uint16_t *timeslot, uint16_t *channel_offset)
     if(channel_offset != NULL) {
       *channel_offset = 2;
     }
-    printf("RPL RULE 2 SELECT PACKET\n");
+    printf("RPL RULE 2 DAO\n");
     return 1;
   }
   return 0;
@@ -228,7 +241,7 @@ new_time_source(const struct tsch_neighbor *old, const struct tsch_neighbor *new
   if (new_ts != 0xffff)
   {
     /* Listen to messages from parent */
-    rpl_link = tsch_schedule_add_link(sf_rpl, LINK_OPTION_TX|LINK_OPTION_RX|LINK_OPTION_SHARED , LINK_TYPE_NORMAL,
+    rpl_link = tsch_schedule_add_link(sf_rpl,LINK_OPTION_RX, LINK_TYPE_NORMAL,
                                       &tsch_broadcast_address, new_ts, 2, 0);
   }
 }
