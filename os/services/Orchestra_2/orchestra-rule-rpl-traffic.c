@@ -89,8 +89,7 @@ is_DIO_traffic()
 {
 
   if (packetbuf_attr(PACKETBUF_ATTR_NETWORK_ID) == UIP_PROTO_ICMP6 &&
-      (packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DIO) 
-      || packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DIS)))
+      (packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DIO) ))
   
   
   {
@@ -104,49 +103,14 @@ is_DAO_traffic()
 
   if (packetbuf_attr(PACKETBUF_ATTR_NETWORK_ID) == UIP_PROTO_ICMP6 &&
       
-      (packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DAO_ACK) 
+      (packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DAO_ACK)
+       || packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DIS) 
        || packetbuf_attr(PACKETBUF_ATTR_CHANNEL) == (ICMP6_RPL << 8 | RPL_CODE_DAO)))
   
   {
     return 1;
   }
   return 0;
-}
-/*---------------------------------------------------------------------------*/
-
-static void
-add_uc_link(const linkaddr_t *linkaddr)
-{
-  if(linkaddr != NULL) {
-    uint16_t timeslot = get_node_timeslot(linkaddr);
-
- 
-    tsch_schedule_add_link(sf_rpl,
-        LINK_OPTION_RX,
-        LINK_TYPE_NORMAL, &tsch_broadcast_address,
-        timeslot, 2, 0);
-  }
-}
-/*---------------------------------------------------------------------------*/
-
-static void
-remove_uc_link(const linkaddr_t *linkaddr)
-{
-  if(linkaddr != NULL) {
-    uint16_t timeslot = get_node_timeslot(linkaddr);
-    tsch_schedule_remove_link_by_offsets(sf_rpl, timeslot, channel_offset);
-    tsch_queue_free_packets_to(linkaddr);
-  }
-}
-/*---------------------------------------------------------------------------*/
-static void
-neighbor_updated(const linkaddr_t *linkaddr, uint8_t is_added)
-{
-  if(is_added) {
-    add_uc_link(linkaddr);
-  } else {
-    remove_uc_link(linkaddr);
-  }
 }
 /*---------------------------------------------------------------------------*/
 static int
@@ -162,13 +126,61 @@ neighbor_has_uc_link(const linkaddr_t *linkaddr)
 
   return 0;
 }
+static void
+add_uc_link(const linkaddr_t *linkaddr)
+{
+  if(linkaddr != NULL) {
+    uint16_t timeslot = get_node_timeslot(linkaddr);
+
+ 
+    tsch_schedule_add_link(sf_rpl,
+        LINK_OPTION_RX,
+        LINK_TYPE_NORMAL, &tsch_broadcast_address,
+        timeslot, 2, 0);
+    printf("Add new link in channel 2\n");
+  }
+}
+/*---------------------------------------------------------------------------*/
+
+static void
+remove_uc_link(const linkaddr_t *linkaddr)
+{
+  if(linkaddr != NULL) {
+    uint16_t timeslot = get_node_timeslot(linkaddr);
+    tsch_schedule_remove_link_by_offsets(sf_rpl, timeslot, channel_offset);
+    tsch_queue_free_packets_to(linkaddr);
+    
+  }
+}
+/*---------------------------------------------------------------------------*/
+
+static void
+neighbor_updated(const linkaddr_t *linkaddr, uint8_t is_added)
+{
+  if(is_added) {
+    if (neighbor_has_uc_link(linkaddr)){
+     return ;
+    }
+    else{
+          add_uc_link(linkaddr);
+    }
+  
+  } else {
+    
+      remove_uc_link(linkaddr);
+    
+    
+  }
+}
+/*---------------------------------------------------------------------------*/
+
 static int
 select_packet(uint16_t *slotframe, uint16_t *timeslot, uint16_t *channel_offset)
 {
   /* Select data packets we have a unicast link to */
   linkaddr_t *local_addr = &linkaddr_node_addr;
-  const linkaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
-  if (is_DIO_traffic()&& !neighbor_has_uc_link(local_addr))
+  // const linkaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
+  if (is_DIO_traffic())
   {
     if (slotframe != NULL)
     {
@@ -182,10 +194,10 @@ select_packet(uint16_t *slotframe, uint16_t *timeslot, uint16_t *channel_offset)
     if(channel_offset != NULL) {
       *channel_offset = 0;
     }
-    printf("RPL RULE 2 SELECT PACKET\n");
+    printf("RPL RULE 2 SELECT DIO\n");
     return 1;
   }
-  if (is_DAO_traffic()&&neighbor_has_uc_link(dest))
+  if (is_DAO_traffic())
   {
     if (slotframe != NULL)
     {
